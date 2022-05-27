@@ -286,3 +286,23 @@ setup() {
 @test "task: #Rm" {
     "$DAGGER" "do" -p ./tasks/rm/rm.cue test
 }
+
+@test "task: #Log message" {
+    "$DAGGER" "do" -p ./tasks/log/log.cue test helloWorld
+    assert_line --partial 'hello world'
+}
+
+@test "task: #Log fields" {
+    "$DAGGER" "do" -p ./tasks/log/log.cue test fields
+    assert_line --partial 'hello=world'
+}
+
+@test "task: #Log moreFields" {
+    "$DAGGER" "do" -p ./tasks/log/log.cue test moreFields
+    assert_line --partial 'fun=1 foo=bar'
+}
+
+@test "task: #Log warnLevel" {
+    "$DAGGER" "do" -p ./tasks/log/log.cue test warnLevel
+    assert_line --partial 'WRN'
+}
