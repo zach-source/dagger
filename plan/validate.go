@@ -45,6 +45,7 @@ func fieldMissingErr(p *compiler.Value, field *compiler.Value) error {
 	//
 	// cueerrors.Sanitize() will REMOVE errors for the same position,
 	// thus hiding the error.
+	//
 	return cueerrors.Wrap(missingErr, cueerrors.Newf(parentPos, ""))
 }
 
@@ -73,7 +74,7 @@ func isPlanConcrete(p *compiler.Value, v *compiler.Value) error {
 			return fieldMissingErr(p, v)
 		}
 	// Core types (FS, Secret, Socket): make sure they are references, otherwise abort.
-	case plancontext.IsFSValue(v) || plancontext.IsSecretValue(v) || plancontext.IsSocketValue(v):
+	case plancontext.IsFSValue(v) || plancontext.IsSecretValue(v) || plancontext.IsSocketValue(v) || plancontext.IsLoggerValue(v):
 		// Special case: `dagger.#Scratch` is always concrete
 		if plancontext.IsFSScratchValue(v) {
 			return nil

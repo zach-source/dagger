@@ -37,6 +37,10 @@ package dagger
 
 		// Platform of the client machine
 		platform: _#clientPlatform
+
+		logger: [name=string]: _#clientLogger & {
+			"name": string | *name
+		}
 	}
 
 	// Configure platform execution
@@ -170,3 +174,28 @@ _#clientPlatform: {
 	// Hardware architecture of the client machine
 	arch: string @dagger(generated)
 }
+
+_#clientLogger: {
+	$dagger: task: _name: "ClientLogger"
+
+	// Name of the logger
+	name: string
+
+	// Logger ref to use for log commands
+	output: #Logger @dagger(generated)
+
+	// Level is the default output level for the logger; if left empty
+	// the default level is the same as the CLI flag
+	level?: #Level
+}
+
+#Level: #TraceLevel | #DebugLevel | #InfoLevel | #WarnLevel | #ErrorLevel | #FatalLevel | #PanicLevel | #DisabledLevel
+
+#TraceLevel: "trace"
+#DebugLevel: "debug"
+#InfoLevel: "info"
+#WarnLevel: "warn"
+#ErrorLevel: "error"
+#FatalLevel: "fatal"
+#PanicLevel: "panic"
+#DisabledLevel: "disabled"

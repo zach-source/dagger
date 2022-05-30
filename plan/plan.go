@@ -70,6 +70,7 @@ func Load(ctx context.Context, cfg Config) (*Plan, error) {
 		return nil, err
 	}
 
+
 	for i, param := range cfg.With {
 		log.Ctx(ctx).Debug().Interface("with", param).Msg("compiling overlay")
 		paramV, err := compiler.Compile(fmt.Sprintf("with%v", i), param)

@@ -6,36 +6,60 @@ import (
 )
 
 dagger.#Plan & {
+	client: logger: {
+		"info": output: dagger.#Logger
+		"disabled": {
+			output: dagger.#Logger
+			level:  dagger.#DisabledLevel
+		}
+		"warn": {
+			output: dagger.#Logger
+			level:  dagger.#WarnLevel
+		}
+	}
 	actions: {
 		test: {
 			helloWorld: core.#Log & {
-				message: "hello world"
+				input: client.logger."info".output
+				message: "hello world 2"
 			}
 
-			fields: core.#Log & {
-				message: "a message"
-				fields: {
-					"hello": "world"
-				}
+			disabledHelloWorld: core.#Log & {
+				input: client.logger."disabled".output
+				message: "hello world 3"
+			}
+
+			filteredHelloWorld: core.#Log & {
+				input: client.logger."warn".output
+				message: "hello world 4"
+				level: core.#InfoLevel
 			}
 
 			moreFields: core.#Log & {
-				message: "a message"
+				input: client.logger."info".output
+				message: "moreFields message"
 				fields: {
 					"hello": "world"
-					"fun": "1"
-					"foo": "bar"
+					"fun": 22
+					"foo": true
 				}
 			}
 
 			warnLevel: core.#Log & {
+				input: client.logger."info".output
 				message: "a message"
 				fields: {
 					"hello": "world"
-					"fun": "1"
-					"foo": "bar"
 				}
 				level: core.#WarnLevel
+			}
+
+			badFields: core.#Log & {
+				input: client.logger."info".output
+				message: "badFields"
+				fields: {
+					"badfield": {"a" : "b"}
+				}
 			}
 		}
 	}

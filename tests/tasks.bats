@@ -287,22 +287,37 @@ setup() {
     "$DAGGER" "do" -p ./tasks/rm/rm.cue test
 }
 
-@test "task: #Log message" {
-    "$DAGGER" "do" -p ./tasks/log/log.cue test helloWorld
-    assert_line --partial 'hello world'
+@test "task: #Log helloWorld" {
+    run "$DAGGER" "do" -p ./tasks/log/log.cue test helloWorld --log-format=plain
+    assert_line --partial 'hello world 2'
 }
 
-@test "task: #Log fields" {
-    "$DAGGER" "do" -p ./tasks/log/log.cue test fields
-    assert_line --partial 'hello=world'
+@test "task: #Log disabledHelloWorld" {
+    run "$DAGGER" "do" -p ./tasks/log/log.cue test disabledHelloWorld --log-format=plain
+    refute_line --partial 'hello world 3'
+}
+
+@test "task: #Log filteredHelloWorld" {
+    run "$DAGGER" "do" -p ./tasks/log/log.cue test filteredHelloWorld --log-format=plain
+    refute_line --partial 'hello world 4'
 }
 
 @test "task: #Log moreFields" {
-    "$DAGGER" "do" -p ./tasks/log/log.cue test moreFields
-    assert_line --partial 'fun=1 foo=bar'
+    run "$DAGGER" "do" -p ./tasks/log/log.cue test moreFields --log-format=plain
+    assert_output --partial "actions.test.moreFields"
+    assert_output --partial "moreFields message"
+    assert_output --partial "foo=true"
+    assert_output --partial "fun=22"
+    assert_output --partial "hello=world"
 }
 
 @test "task: #Log warnLevel" {
-    "$DAGGER" "do" -p ./tasks/log/log.cue test warnLevel
-    assert_line --partial 'WRN'
+    run "$DAGGER" "do" -p ./tasks/log/log.cue test warnLevel --log-format=plain
+    assert_line --regexp ".*WRN.*actions\.test\.warnLevel.*"
+}
+
+@test "task: #Log badFields" {
+    run "$DAGGER" "do" -p ./tasks/log/log.cue test badFields --log-format=plain
+    assert_line --partial "failed: value provided for 'actions.test.badFields.fields.badfield' has an unsupported 'struct' kind for logging"
+    assert_failure
 }

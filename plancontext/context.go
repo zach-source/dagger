@@ -13,6 +13,7 @@ type Context struct {
 	TempDirs  *tempDirContext
 	Secrets   *secretContext
 	Sockets   *socketContext
+	Loggers   *loggerContext
 }
 
 func New() *Context {
@@ -32,6 +33,9 @@ func New() *Context {
 		},
 		Sockets: &socketContext{
 			store: make(map[string]*Socket),
+		},
+		Loggers: &loggerContext{
+			store: make(map[string]*Logger),
 		},
 	}
 }

@@ -2,11 +2,10 @@ package task
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"cuelang.org/go/cue"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"go.dagger.io/dagger/compiler"
 	"go.dagger.io/dagger/plancontext"
 	"go.dagger.io/dagger/solver"
@@ -20,61 +19,72 @@ type logTask struct {
 }
 
 func (l *logTask) Run(ctx context.Context, pctx *plancontext.Context, s *solver.Solver, v *compiler.Value) (*compiler.Value, error) {
-	lg := log.Ctx(ctx)
+	lg, err := pctx.Loggers.FromValue(v.Lookup("input"))
+	if err != nil {
+		return nil, err
+	}
 
 	message, err := v.Lookup("message").String()
 	if err != nil {
 		return nil, err
 	}
 
-	level, err := v.Lookup("level").String()
-	if err != nil {
-		return nil, err
+	var level string
+
+	if l := v.Lookup("level"); l.Exists() {
+		level, err = l.String()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	var fields map[string]interface{}
+	fields := make(map[string]interface{})
 	if i := v.Lookup("fields"); i.Exists() {
-		defFields, err := i.Fields(cue.All())
+		allFields, err := i.Fields(cue.All())
+		if err != nil { return nil, err }
+
+		for _, f := range allFields {
+			selectors := f.Value.Path().Selectors()
+			name := selectors[len(selectors)-1].String()
+
+			var value string
+			switch f.Value.Kind() {
+			case cue.BoolKind:
+				v, err := f.Value.Bool()
+				if err != nil { return nil, err }
+				value = fmt.Sprintf("%v", v)
+			case cue.StringKind:
+				v, err := f.Value.String()
+				if err != nil { return nil, err }
+				value = fmt.Sprintf("%v", v)
+			case cue.IntKind:
+				v, err := f.Value.Int64()
+				if err != nil { return nil, err }
+				value = fmt.Sprintf("%v", v)
+			case cue.FloatKind:
+				b, err := f.Value.Cue().Float64()
+				if err != nil { return nil, err }
+				value = fmt.Sprintf("%v", b)
+			default:
+				return nil, fmt.Errorf("value provided for '%s' has an unsupported '%v' kind for logging", f.Value.Path().String(), f.Value.Kind())
+			}
+
+			fields[name] = value
+		}
+	}
+
+	event := lg.Event()
+
+	if level != "" {
+		lvl, err := zerolog.ParseLevel(level)
 		if err != nil {
 			return nil, err
 		}
 
-		fields = make(map[string]interface{})
-		for i := 0; i < len(defFields); i = i + 2 {
-			keyStr, err := l.getString(pctx, defFields[i].Value)
-			if err != nil {
-				return nil, err
-			}
-			fieldStr, err := l.getString(pctx, defFields[i+1].Value)
-			if err != nil {
-				return nil, err
-			}
-			fields[keyStr] = fieldStr
-		}
+		event = lg.WithLevel(lvl)
 	}
 
-	lvl, err := zerolog.ParseLevel(level)
-	if err != nil {
-		return nil, err
-	}
-
-	lg.WithLevel(lvl).Fields(fields).Msg(message)
-
-	// Discuss, should panic/fatal/error logs fail our exec?
-	// Should we even allow them?
-	// Should this be a separate task or func? Or an option on the log?
-	if lvl == zerolog.ErrorLevel {
-		return nil, errors.New("error encountered")
-	}
-
-	if lvl == zerolog.PanicLevel {
-		return nil, errors.New("panic error encountered")
-	}
-
-	if lvl == zerolog.FatalLevel {
-		return nil, errors.New("fatal error encountered")
-	}
-
+	event.Str("task", v.Path().String()).Fields(fields).Msg(message)
 	return compiler.NewValue(), nil
 }
 

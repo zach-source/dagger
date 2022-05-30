@@ -27,3 +27,8 @@ package dagger
 #Socket: {
 	$dagger: socket: _id: string
 }
+
+// A logger to use for outputing values.
+#Logger: {
+	$dagger: logger: _id: string
+}

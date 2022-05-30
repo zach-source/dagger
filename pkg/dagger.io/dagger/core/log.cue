@@ -1,23 +1,26 @@
 package core
 
+import "dagger.io/dagger"
+
 #Log: {
 	$dagger: task: _name: "Log"
 
-	// Log level; defaults to info
-	level: #Level | *#InfoLevel
+	input: dagger.#Logger
+
+	// Log level; if not available uses the logger's default
+	level?: dagger.#Level
 
 	// Message to send
 	message: string
 
-	fields?: [string]: string
+  // Additional fields to display
+	fields?: [string]: _
 }
 
-#Level: #TraceLevel | #DebugLevel | #InfoLevel | #WarnLevel | #ErrorLevel | #FatalLevel | #PanicLevel
-
-#TraceLevel: "trace"
-#DebugLevel: "debug"
-#InfoLevel: "info"
-#WarnLevel: "warn"
-#ErrorLevel: "error"
-#FatalLevel: "fatal"
-#PanicLevel: "panic"
+#TraceLevel: dagger.#TraceLevel
+#DebugLevel: dagger.#DebugLevel
+#InfoLevel: dagger.#InfoLevel
+#WarnLevel: dagger.#WarnLevel
+#ErrorLevel: dagger.#ErrorLevel
+#FatalLevel: dagger.#Fatallevel
+#PanicLevel: dagger.#PanicLevel
